@@ -1,17 +1,16 @@
 #define IRpin_PIN PIND
 #define IRpin 2
+#define NUM_PULSES 100
 #define RESOLUTION 20
-#define NUMPULSES 100
 
-#include "ir_codes.h"
+
+uint16_t pulses[100][2];
+uint8_t currentpulse = 0;
 
 void setup(void) {
   Serial.begin(9600);
   Serial.println("Ready to decode IR!");
 }
-
-uint16_t pulses[NUMPULSES][2];
-uint8_t currentpulse = 0;
 
 void loop(void) {
   uint16_t highpulse, lowpulse;
@@ -21,16 +20,20 @@ void loop(void) {
     highpulse++;
     delayMicroseconds(RESOLUTION);
   }
+
   pulses[currentpulse][0] = highpulse;
+
   while (! (IRpin_PIN & _BV(IRpin))) {
      lowpulse++;
      delayMicroseconds(RESOLUTION);
   }
   pulses[currentpulse][1] = lowpulse;
-  
+
   currentpulse++;
   
-  if(currentpulse == NUMPULSES) {
+  if(currentpulse == NUM_PULSES)
+  {
+    printpulses();
     currentpulse = 0;
   }
 }
