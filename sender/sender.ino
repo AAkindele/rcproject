@@ -16,10 +16,9 @@ int channel = 128; // The channel is technically 1. Since its the 8th in the byt
 
 int pulseValues[CODE_BYTES];
 //                            0 Y Y Y Y Y Y Y 0 P P P P P P P C T T T T T T T 0 A A A A A A A
-int binCode[BIN_CODE_SIZE] = {0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int binCode[BIN_CODE_SIZE] = {0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-int inCtrlByte = 0;   // what control variable to change
-int inOffsetByte = 0; // how much to change control variable by
+int inCtrlByte = 0;   // what control variable to change and which direction
 
 void setup()
 {
@@ -34,6 +33,15 @@ void setup()
 void loop()
 {
   sendCode();
+  //checkPulseChanges();
+  for(int i = 0; i < 32; i++)
+  {
+    Serial.print(binCode[i]);
+    if(i % 8 == 7)
+      Serial.print(" ");
+  }
+  Serial.println("");
+  //delay(2000);
 }
 
 void sendCode()
@@ -57,18 +65,17 @@ void sendCode()
 void checkPulseChanges()
 {
   inCtrlByte = Serial.read();
-  inOffsetByte = Serial.read();
   int start = BIN_CODE_SIZE;
   
   int tmp = 0;
   int bin[BYTE_SIZE] = {0,0,0,0,0,0,0,0};
-  if(inCtrlByte == 'y')
+  if(inCtrlByte == 'Y' || inCtrlByte == 'y')
   {
-    if(inOffsetByte == '+')
+    if(inCtrlByte == 'Y')
     {
       pulseValues[yawIndex]++;
     }
-    else if(inOffsetByte == '-')
+    else if(inCtrlByte == 'y')
     {
       pulseValues[yawIndex]--;
     }
@@ -77,13 +84,13 @@ void checkPulseChanges()
     start = 0;
     decToBin(pulseValues[yawIndex], bin);
   }
-  else if(inCtrlByte == 'p')
+  else if(inCtrlByte == 'P' || inCtrlByte == 'p')
   {
-    if(inOffsetByte == '+')
+    if(inCtrlByte == 'P')
     {
       pulseValues[pitchIndex]++;
     }
-    else if(inOffsetByte == '-')
+    else if(inCtrlByte == 'p')
     {
       pulseValues[pitchIndex]--;
     }
@@ -92,13 +99,13 @@ void checkPulseChanges()
     start = 8;
     decToBin(pulseValues[pitchIndex], bin);
   }
-  else if(inCtrlByte == 't')
+  else if(inCtrlByte == 'T' || inCtrlByte == 't')
   {
-    if(inOffsetByte == '+')
+    if(inCtrlByte == 'T')
     {
       pulseValues[throttleIndex]++;
     }
-    else if(inOffsetByte == '-')
+    else if(inCtrlByte == 't')
     {
       pulseValues[throttleIndex]--;
     }
@@ -107,10 +114,6 @@ void checkPulseChanges()
     start = 16;
     //channel or'ed with throttle gives the third byte in the frame
     decToBin(pulseValues[throttleIndex] | channel, bin);
-  }
-  else
-  {
-    int binCode[32] = {0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   }
   
   //copy the changed byte into the correct section of the frame
