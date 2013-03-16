@@ -31,8 +31,8 @@ void setup()
 }
 
 void loop()
-{
-  sendCode();
+{/*
+  //sendCode();
   //checkPulseChanges();
   for(int i = 0; i < 32; i++)
   {
@@ -41,7 +41,7 @@ void loop()
       Serial.print(" ");
   }
   Serial.println("");
-  //delay(2000);
+  //delay(2000);*/
 }
 
 void sendCode()
@@ -66,16 +66,17 @@ void checkPulseChanges()
 {
   inCtrlByte = Serial.read();
   int start = BIN_CODE_SIZE;
-  
+  int low = 0;
+  int high = 127;
   int tmp = 0;
   int bin[BYTE_SIZE] = {0,0,0,0,0,0,0,0};
   if(inCtrlByte == 'Y' || inCtrlByte == 'y')
   {
-    if(inCtrlByte == 'Y')
+    if(inCtrlByte == 'Y' && pulseValues[yawIndex] < high)
     {
       pulseValues[yawIndex]++;
     }
-    else if(inCtrlByte == 'y')
+    else if(inCtrlByte == 'y' && pulseValues[yawIndex] > low)
     {
       pulseValues[yawIndex]--;
     }
@@ -86,11 +87,11 @@ void checkPulseChanges()
   }
   else if(inCtrlByte == 'P' || inCtrlByte == 'p')
   {
-    if(inCtrlByte == 'P')
+    if(inCtrlByte == 'P' && pulseValues[pitchIndex] < high)
     {
       pulseValues[pitchIndex]++;
     }
-    else if(inCtrlByte == 'p')
+    else if(inCtrlByte == 'p' && pulseValues[pitchIndex] > low)
     {
       pulseValues[pitchIndex]--;
     }
@@ -101,11 +102,11 @@ void checkPulseChanges()
   }
   else if(inCtrlByte == 'T' || inCtrlByte == 't')
   {
-    if(inCtrlByte == 'T')
+    if(inCtrlByte == 'T' && pulseValues[throttleIndex] < high)
     {
       pulseValues[throttleIndex]++;
     }
-    else if(inCtrlByte == 't')
+    else if(inCtrlByte == 't' && pulseValues[throttleIndex] > low)
     {
       pulseValues[throttleIndex]--;
     }
