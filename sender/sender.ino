@@ -31,17 +31,8 @@ void setup()
 }
 
 void loop()
-{/*
-  //sendCode();
-  //checkPulseChanges();
-  for(int i = 0; i < 32; i++)
-  {
-    Serial.print(binCode[i]);
-    if(i % 8 == 7)
-      Serial.print(" ");
-  }
-  Serial.println("");
-  //delay(2000);*/
+{
+  sendCode();
 }
 
 void sendCode()
@@ -144,11 +135,11 @@ void pulseIR(long microsecs)
   while (microsecs > 0)
   {
     digitalWrite(IRledPin, HIGH);
-    delayMicroseconds(9);
+    delayMicroseconds(10);
     digitalWrite(IRledPin, LOW);
-    delayMicroseconds(9);
+    delayMicroseconds(10);
 
-    microsecs -= 24;
+    microsecs -= 26;
   }
   sei();
 }
