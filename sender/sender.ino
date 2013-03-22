@@ -24,13 +24,6 @@ void setup()
 void loop()
 {
   sendCode();
-  /*
-  char x = Serial.read();
-  if(x == 'U')
-    digitalWrite(IRledPin, HIGH);
-  if(x == 'u')
-    digitalWrite(IRledPin, LOW);
-  */
 }
 
 void sendCode()
