@@ -12,12 +12,13 @@ const int ON = 1;
 const int OFF = 0;
 const int CODE_SIZE = 32;
 
-const int YAW_SHIFT = 0;
+const string YAW = "yaw";
+int curr_yaw,prev_yaw,yaw_change = 63;
 
 const string PITCH = "pitch";
 const int PITCH_SHIFT = 8;
-const int PITCH_SCALAR = -50;
-const float PITCH_SENSITIVITY = 0.25f;
+//const int PITCH_SCALAR = -50;
+//const float PITCH_SENSITIVITY = 0.25f;
 int curr_pitch,prev_pitch,pitch_change = 63;
 
 const string THROTTLE = "throttle";
@@ -75,14 +76,52 @@ static void normalizeThrottle(float current_throttle)
   curr_throttle = checkBounds(curr_throttle);
 }
 
-static void normalize_pitch(float current_pitch)
+static void normalizePitch(float current_pitch)
 {
+  /*
   curr_pitch = (int)(current_pitch * PITCH_SCALAR);
   if(curr_pitch < (prev_pitch * (1+PITCH_SENSITIVITY)) && curr_pitch > (prev_pitch * (1-PITCH_SENSITIVITY)))
   {
     curr_pitch = prev_pitch;
   }
   curr_pitch = checkBounds(curr_pitch);
+  */
+  if(-(current_pitch) < 0.54)
+  {
+    curr_pitch = 13;
+  }
+  else if(-(current_pitch) < 1.08)
+  {
+    curr_pitch = 38;
+  }
+  else if(-(current_pitch) < 1.62)
+  {
+    curr_pitch = 63;
+  }
+  else if(-(current_pitch) < 2.16)
+  {
+    curr_pitch = 89;
+  }
+  else if(-(current_pitch) < 2.7)
+  {
+    curr_pitch = 114;
+  }
+}
+
+static void normalizeYaw(float current_yaw)
+{
+  if(current_yaw >= -1 && current_yaw <= 1)
+  {
+    curr_yaw = 63;
+  }
+  else if(current_yaw < -1)
+  {
+    curr_yaw = 31;
+  }
+  else if(current_yaw > 1)
+  {
+    curr_yaw = 94;
+  }
 }
 
 vector<int> * binArray(int num)
@@ -123,6 +162,10 @@ String^ getCharacter(string section, int index, bool on)
   {
     return onOffSymbol(index + PITCH_SHIFT, on);
   }
+  else if(section == YAW)
+  {
+    return onOffSymbol(index,on);
+  }
   return "";
 }
 
@@ -144,30 +187,38 @@ void LeapListener::onFrame(const Controller& controller)
   if(!hands.empty())
   {
     normalizeThrottle(hands[0].palmVelocity().y);
-    float raw_curr_pitch = hands[0].palmNormal().pitch();
-    normalize_pitch(raw_curr_pitch);
+    normalizePitch(hands[0].palmNormal().pitch());
+    normalizeYaw(hands[0].palmNormal().yaw());
 
     throttle_change = prev_throttle ^ curr_throttle;
     pitch_change = prev_pitch ^ curr_pitch;
+    yaw_change = prev_yaw ^ curr_yaw;
 
     vector<int> * throttle_vector = binArray(curr_throttle);
     vector<int> * throttle_change_vector = binArray(throttle_change);
     vector<int> * pitch_vector = binArray(curr_pitch);
     vector<int> * pitch_change_vector = binArray(pitch_change);
+    vector<int> * yaw_vector = binArray(curr_yaw);
+    vector<int> * yaw_change_vector = binArray(yaw_change);
 
     int index = 1;
     while(index < 8)
     {
       checkChangeSerialWrite(throttle_vector, throttle_change_vector, THROTTLE, index);
       checkChangeSerialWrite(pitch_vector, pitch_change_vector, PITCH, index);
+      checkChangeSerialWrite(yaw_vector, yaw_change_vector, YAW, index);
       index++;
     }
+    cout << endl;
     
     prev_throttle = curr_throttle;
     prev_pitch = curr_pitch;
+    prev_yaw = curr_yaw;
     delete throttle_vector;
     delete throttle_change_vector;
     delete pitch_vector;
     delete pitch_change_vector;
+    delete yaw_vector;
+    delete yaw_change_vector;
   }
 }
