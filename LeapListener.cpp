@@ -14,14 +14,18 @@ const int CODE_SIZE = 32;
 
 const int YAW_SHIFT = 0;
 
+const string PITCH = "pitch";
 const int PITCH_SHIFT = 8;
+const int PITCH_SCALAR = -50;
+const float PITCH_SENSITIVITY = 0.25f;
+int curr_pitch,prev_pitch,pitch_change = 63;
 
 const string THROTTLE = "throttle";
 const int THROTTLE_SHIFT = 16;
 const int THROTTLE_SCALAR = 200;
 int curr_throttle,prev_throttle,throttle_change = 0;
 
-                                    //0   Y   Y   Y   Y   Y   Y   Y   0   P   P   P   P   P   P   P   C   T   T   T   T   T   T   T   0   A   A   A   A   A   A   A
+                                               //0   Y   Y   Y   Y   Y   Y   Y   0   P   P   P   P   P   P   P   C   T   T   T   T   T   T   T   0   A   A   A   A   A   A   A
 const gcroot<String^> SYMBOLS_ON[CODE_SIZE]  = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","!","@","#","$","%","^"};
 const gcroot<String^> SYMBOLS_OFF[CODE_SIZE] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","1","2","3","4","5","6"};
 
@@ -52,20 +56,36 @@ void LeapListener::onExit(const Controller& controller)
   Console::WriteLine("Exited");
 }
 
-static void normalize_throttle(float current_throttle)
+static int checkBounds(int value)
 {
-  curr_throttle += ((int)(current_throttle) / THROTTLE_SCALAR);
-  if( curr_throttle > 127)
+  if( value > 127)
   {
-    curr_throttle =  127;
+    return  127;
   }
-  else if (curr_throttle < 0)
+  else if (value < 0)
   {
-    curr_throttle =  0;
+    return  0;
   }
+  return value;
 }
 
-vector<int> * bin_array(int num)
+static void normalizeThrottle(float current_throttle)
+{
+  curr_throttle += ((int)(current_throttle) / THROTTLE_SCALAR);
+  curr_throttle = checkBounds(curr_throttle);
+}
+
+static void normalize_pitch(float current_pitch)
+{
+  curr_pitch = (int)(current_pitch * PITCH_SCALAR);
+  if(curr_pitch < (prev_pitch * (1+PITCH_SENSITIVITY)) && curr_pitch > (prev_pitch * (1-PITCH_SENSITIVITY)))
+  {
+    curr_pitch = prev_pitch;
+  }
+  curr_pitch = checkBounds(curr_pitch);
+}
+
+vector<int> * binArray(int num)
 {
   vector<int> * ret = new vector<int>(8,0);
   int my_num = num;
@@ -81,20 +101,41 @@ vector<int> * bin_array(int num)
   return ret;
 }
 
-String^ get_character(string section, int index, bool on)
+String^ onOffSymbol(int index, bool on)
+{
+  if(on)
+  {
+    return SYMBOLS_ON[index];
+  }
+  else
+  {
+    return SYMBOLS_OFF[index];
+  }
+}
+
+String^ getCharacter(string section, int index, bool on)
 {
   if(section == THROTTLE)
   {
-    if(on)
-    {
-      return SYMBOLS_ON[index + THROTTLE_SHIFT];
-    }
-    else
-    {
-      return SYMBOLS_OFF[index + THROTTLE_SHIFT];
-    }
+    return onOffSymbol(index + THROTTLE_SHIFT, on);
+  }
+  else if(section == PITCH)
+  {
+    return onOffSymbol(index + PITCH_SHIFT, on);
   }
   return "";
+}
+
+void checkChangeSerialWrite(vector<int> * value_vector, vector<int> * change_vector, string section, int index)
+{
+  if(change_vector->at(index) == 1)
+  {
+    changeChar = getCharacter(section, index, value_vector->at(index) == ON);
+    if(changeChar->Length != 0)
+    {
+      arduino->WriteLine(changeChar);
+    }
+  }
 }
 
 void LeapListener::onFrame(const Controller& controller)
@@ -102,30 +143,31 @@ void LeapListener::onFrame(const Controller& controller)
   HandList hands = controller.frame().hands();
   if(!hands.empty())
   {
-    normalize_throttle(hands[0].palmVelocity().y);
+    normalizeThrottle(hands[0].palmVelocity().y);
+    float raw_curr_pitch = hands[0].palmNormal().pitch();
+    normalize_pitch(raw_curr_pitch);
+
     throttle_change = prev_throttle ^ curr_throttle;
+    pitch_change = prev_pitch ^ curr_pitch;
 
-    vector<int> * throttle_vector = bin_array(curr_throttle);
-    vector<int> * throttle_change_vector = bin_array(throttle_change);
+    vector<int> * throttle_vector = binArray(curr_throttle);
+    vector<int> * throttle_change_vector = binArray(throttle_change);
+    vector<int> * pitch_vector = binArray(curr_pitch);
+    vector<int> * pitch_change_vector = binArray(pitch_change);
 
-    //index 0 for this byte is the channel. start at index 1. counting from left to right for these vectors
     int index = 1;
     while(index < 8)
     {
-      //there is a change at this index
-      if(throttle_change_vector->at(index) == 1)
-      {
-        changeChar = get_character(THROTTLE, index, throttle_vector->at(index) == ON);
-        if(changeChar->Length != 0)
-        {
-          arduino->WriteLine(changeChar);
-        }
-      }
+      checkChangeSerialWrite(throttle_vector, throttle_change_vector, THROTTLE, index);
+      checkChangeSerialWrite(pitch_vector, pitch_change_vector, PITCH, index);
       index++;
     }
     
     prev_throttle = curr_throttle;
+    prev_pitch = curr_pitch;
     delete throttle_vector;
     delete throttle_change_vector;
+    delete pitch_vector;
+    delete pitch_change_vector;
   }
 }
