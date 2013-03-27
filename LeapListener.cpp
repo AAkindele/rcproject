@@ -32,6 +32,8 @@ const gcroot<String^> SYMBOLS_OFF[CODE_SIZE] = {"a","b","c","d","e","f","g","h",
 
 gcroot<String^> changeChar;
 
+HandList hands;
+
 void LeapListener::onInit(const Controller& controller)
 {
   Console::WriteLine("Initialized");
@@ -39,9 +41,10 @@ void LeapListener::onInit(const Controller& controller)
 
 void LeapListener::onConnect(const Controller& controller)
 {
-  portName = "COM3";
+  portName = "COM8";
   baudRate = 9600;
   arduino = gcnew SerialPort(portName, baudRate);
+  arduino->ReadTimeout = 1; //1 millisecond
   arduino->Open();
   Console::WriteLine("Connected");
 }
@@ -183,10 +186,10 @@ void checkChangeSerialWrite(vector<int> * value_vector, vector<int> * change_vec
 
 void LeapListener::onFrame(const Controller& controller)
 {
-  HandList hands = controller.frame().hands();
+  hands = controller.frame().hands();
   if(!hands.empty())
   {
-    normalizeThrottle(hands[0].palmVelocity().y);
+	normalizeThrottle(hands[0].palmVelocity().y);
     normalizePitch(hands[0].palmNormal().pitch());
     normalizeYaw(hands[0].palmNormal().yaw());
 
@@ -209,8 +212,9 @@ void LeapListener::onFrame(const Controller& controller)
       checkChangeSerialWrite(yaw_vector, yaw_change_vector, YAW, index);
       index++;
     }
-    cout << endl;
-    
+
+    cout << curr_throttle << " " << curr_pitch << " " << curr_yaw << endl;
+
     prev_throttle = curr_throttle;
     prev_pitch = curr_pitch;
     prev_yaw = curr_yaw;
@@ -220,5 +224,16 @@ void LeapListener::onFrame(const Controller& controller)
     delete pitch_change_vector;
     delete yaw_vector;
     delete yaw_change_vector;
+
+    try
+    {
+      //this read has a timeout, so it waits until the arduino says its done or it times out with an exception.
+      arduino->ReadByte();
+    }
+    catch(System::TimeoutException^ e)
+    {
+      //assume the arduino is not done processing the previous frame.
+      return;
+    }
   }
 }

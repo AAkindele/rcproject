@@ -15,6 +15,8 @@ int binCode[BIN_CODE_SIZE] = {0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
 const char SYMBOLS_ON[BIN_CODE_SIZE]  = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','!','@','#','$','%','^'};
 const char SYMBOLS_OFF[BIN_CODE_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','1','2','3','4','5','6'};
 
+boolean changes = false;
+
 void setup()
 {
   pinMode(IRledPin, OUTPUT);
@@ -23,11 +25,7 @@ void setup()
 
 void loop()
 {
-  sendCode();
-}
-
-void sendCode()
-{
+  //return;
   checkPulseChanges();
   
   pulseIR(2000);
@@ -36,29 +34,54 @@ void sendCode()
   
   for(int i = 0; i < BIN_CODE_SIZE; i++)
   {
-    sendPulseValue(binCode[i]);
+    if (binCode[i] == ON)
+    {
+      pulseIR(300);
+      delayMicroseconds(600);
+      pulseLength += 900;
+    }
+    else if(binCode[i] == OFF)
+    {
+      pulseIR(300);
+      delayMicroseconds(300);
+      pulseLength += 600;
+    }
   }
   
   pulseIR(300);
   delayMicroseconds((26560 - pulseLength));
+  
+  //let the computer know you're done
+  //the byte that is sent doesnt matter
+  if(changes)
+  {
+    changes = false;
+    Serial.write('X');
+  }
 }
 
 void checkPulseChanges()
 {
-  char inCtrlByte = Serial.read();
+  char inCtrlByte;
   int index;
-  index = indexOf(inCtrlByte, SYMBOLS_ON);
-  if(index != NOT_FOUND)
+  changes = Serial.available() > 0;
+  while(Serial.available() > 0)
   {
-    binCode[index] = ON;
-  }
-  else
-  {
-    index = indexOf(inCtrlByte, SYMBOLS_OFF);
+    inCtrlByte = Serial.read();
+    index = indexOf(inCtrlByte, SYMBOLS_ON);
     if(index != NOT_FOUND)
     {
-      binCode[index] = OFF;
+      binCode[index] = ON;
     }
+    else
+    {
+      index = indexOf(inCtrlByte, SYMBOLS_OFF);
+      if(index != NOT_FOUND)
+      {
+        binCode[index] = OFF;
+      }
+    }
+    inCtrlByte = Serial.read();
   }
 }
 
@@ -75,22 +98,6 @@ void pulseIR(long microsecs)
     microsecs -= 26;
   }
   sei();
-}
-
-void sendPulseValue(int pulseValue)
-{
-  if (pulseValue == ON)
-  {
-    pulseIR(300);
-    delayMicroseconds(600);
-    pulseLength += 900;
-  }
-  else if(pulseValue == OFF)
-  {
-    pulseIR(300);
-    delayMicroseconds(300);
-    pulseLength += 600;
-  }
 }
 
 int indexOf(char c, const char cArr[])
