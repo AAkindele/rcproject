@@ -44,7 +44,6 @@ void LeapListener::onConnect(const Controller& controller)
   portName = "COM8";
   baudRate = 9600;
   arduino = gcnew SerialPort(portName, baudRate);
-  arduino->ReadTimeout = 1; //1 millisecond
   arduino->Open();
   Console::WriteLine("Connected");
 }
@@ -225,15 +224,7 @@ void LeapListener::onFrame(const Controller& controller)
     delete yaw_vector;
     delete yaw_change_vector;
 
-    try
-    {
-      //this read has a timeout, so it waits until the arduino says its done or it times out with an exception.
-      arduino->ReadByte();
-    }
-    catch(System::TimeoutException^ e)
-    {
-      //assume the arduino is not done processing the previous frame.
-      return;
-    }
+    //wait until the arduino says its done
+    arduino->ReadByte();
   }
 }
