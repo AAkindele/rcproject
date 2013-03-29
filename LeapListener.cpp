@@ -23,7 +23,7 @@ int curr_pitch,prev_pitch,pitch_change = 63;
 
 const string THROTTLE = "throttle";
 const int THROTTLE_SHIFT = 16;
-const int THROTTLE_SCALAR = 200;
+const int THROTTLE_SCALAR = 300;
 int curr_throttle,prev_throttle,throttle_change = 0;
 
                                                //0   Y   Y   Y   Y   Y   Y   Y   0   P   P   P   P   P   P   P   C   T   T   T   T   T   T   T   0   A   A   A   A   A   A   A
@@ -44,6 +44,7 @@ void LeapListener::onConnect(const Controller& controller)
   portName = "COM8";
   baudRate = 9600;
   arduino = gcnew SerialPort(portName, baudRate);
+  arduino->ReadTimeout = 1;
   arduino->Open();
   Console::WriteLine("Connected");
 }
@@ -216,7 +217,12 @@ void LeapListener::onFrame(const Controller& controller)
     delete yaw_vector;
     delete yaw_change_vector;
 
-    //wait until the arduino says its done
-    arduino->ReadByte();
+    try
+    {
+      arduino->ReadByte();
+    }
+    catch(System::TimeoutException^)
+    {
+    }
   }
 }
