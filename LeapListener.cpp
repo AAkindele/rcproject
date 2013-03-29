@@ -80,14 +80,6 @@ static void normalizeThrottle(float current_throttle)
 
 static void normalizePitch(float current_pitch)
 {
-  /*
-  curr_pitch = (int)(current_pitch * PITCH_SCALAR);
-  if(curr_pitch < (prev_pitch * (1+PITCH_SENSITIVITY)) && curr_pitch > (prev_pitch * (1-PITCH_SENSITIVITY)))
-  {
-    curr_pitch = prev_pitch;
-  }
-  curr_pitch = checkBounds(curr_pitch);
-  */
   if(-(current_pitch) < 0.54)
   {
     curr_pitch = 13;
@@ -188,7 +180,7 @@ void LeapListener::onFrame(const Controller& controller)
   hands = controller.frame().hands();
   if(!hands.empty())
   {
-	normalizeThrottle(hands[0].palmVelocity().y);
+	  normalizeThrottle(hands[0].palmVelocity().y);
     normalizePitch(hands[0].palmNormal().pitch());
     normalizeYaw(hands[0].palmNormal().yaw());
 
