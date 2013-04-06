@@ -23,7 +23,7 @@ int curr_pitch,prev_pitch,pitch_change = 63;
 
 const string THROTTLE = "throttle";
 const int THROTTLE_SHIFT = 16;
-const int THROTTLE_SCALAR = 300;
+const int THROTTLE_SCALAR = 100;
 int curr_throttle,prev_throttle,throttle_change = 0;
 
                                                //0   Y   Y   Y   Y   Y   Y   Y   0   P   P   P   P   P   P   P   C   T   T   T   T   T   T   T   0   A   A   A   A   A   A   A
