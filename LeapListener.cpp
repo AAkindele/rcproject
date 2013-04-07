@@ -83,11 +83,11 @@ static void normalizePitch(float current_pitch)
 {
   if(-(current_pitch) < 0.54)
   {
-    curr_pitch = 13;
+    curr_pitch = 114;
   }
   else if(-(current_pitch) < 1.08)
   {
-    curr_pitch = 38;
+    curr_pitch = 89;
   }
   else if(-(current_pitch) < 1.62)
   {
@@ -95,11 +95,11 @@ static void normalizePitch(float current_pitch)
   }
   else if(-(current_pitch) < 2.16)
   {
-    curr_pitch = 89;
+    curr_pitch = 38;
   }
   else if(-(current_pitch) < 2.7)
   {
-    curr_pitch = 114;
+    curr_pitch = 13;
   }
 }
 
@@ -181,7 +181,7 @@ void LeapListener::onFrame(const Controller& controller)
   hands = controller.frame().hands();
   if(!hands.empty())
   {
-	  normalizeThrottle(hands[0].palmVelocity().y);
+    normalizeThrottle(hands[0].palmVelocity().y);
     normalizePitch(hands[0].palmNormal().pitch());
     normalizeYaw(hands[0].palmNormal().yaw());
 
