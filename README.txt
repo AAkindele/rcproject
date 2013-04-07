@@ -1,7 +1,7 @@
 rcproject
 =========
 
-LeapMotion controlled helicopter
+LeapMotion controlled helicopter: https://www.youtube.com/watch?v=lOodWMPOoZ4
 
 I decided to do this project after seeing the video https://www.youtube.com/watch?v=ZoiwL0SK3jA
 
